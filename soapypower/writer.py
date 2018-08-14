@@ -82,13 +82,17 @@ class SoapyPowerBinFormat:
 
     def write(self, f, time_start, time_stop, start, stop, step, samples, pwr_array):
         """Write data to file-like object"""
-        f.write(self.magic)
-        f.write(self.header_struct.pack(
-            self.version, time_start, time_stop, start, stop, step, samples, pwr_array.nbytes
-        ))
-        #pwr_array.tofile(f)
-        f.write(pwr_array.tobytes())
-        f.flush()
+        try:
+            f.write(self.magic)
+            f.write(self.header_struct.pack(
+                self.version, time_start, time_stop, start, stop, step, samples, pwr_array.nbytes
+            ))
+            f.write(pwr_array.tobytes())
+            f.flush()
+        except BrokenPipeError:
+            # if the client dies, exit immediately rather than trying to push
+            # back data to a non-existing pipe
+            exit(1)
 
     def header_size(self):
         """Return total size of header"""
